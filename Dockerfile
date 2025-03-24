@@ -1,15 +1,26 @@
+# --- Build Stage ---
 FROM ubuntu:latest AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-17-jdk -y
+# Cập nhật và cài đặt JDK & Maven
+RUN apt-get update && apt-get install -y openjdk-17-jdk maven
+
+# Đặt thư mục làm việc
+WORKDIR /app
+
+# Copy toàn bộ source code vào container
 COPY . .
 
-RUN ./gradlew bootJar --no-daemon
+# Build project với Maven
+RUN mvn clean package -DskipTests
 
+# --- Run Stage ---
 FROM openjdk:17-jdk-slim
 
+# Expose cổng 8080
 EXPOSE 8080
 
-COPY --from=build /build/libs/demo-1.jar app.jar
+# Copy file JAR từ build stage
+COPY --from=build /app/target/*.jar app.jar
 
+# Chạy ứng dụng
 ENTRYPOINT ["java", "-jar", "app.jar"]
